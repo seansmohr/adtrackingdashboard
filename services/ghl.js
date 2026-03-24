@@ -60,19 +60,23 @@ async function searchContacts(startDate, endDate) {
   const fieldKey = await getAdCreativeFieldKey();
   const allContacts = [];
   let page = 1;
-  const pageSize = 100;
+  const pageLimit = 100;
 
   while (true) {
     const body = {
       locationId: LOCATION_ID,
       page,
-      pageSize,
+      pageLimit,
       filters: [
         {
           field: 'dateAdded',
-          operator: 'BETWEEN',
+          operator: 'gte',
           value: startDate,
-          secondValue: endDate,
+        },
+        {
+          field: 'dateAdded',
+          operator: 'lte',
+          value: endDate,
         },
       ],
     };
