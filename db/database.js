@@ -66,6 +66,9 @@ for (const name of knownAds) {
 
 // Seed known ad ID → name mappings
 const knownAdIdMap = {
+  '120243273380180544': "Winning Ad | Don't Overpay",
+  '120243275838750544': 'Winning Ad | Enrollment Window',
+  '120243275895790544': 'Winning Ad | One Year',
   '120243275937490544': 'Winning Ad | Not Free',
 };
 
