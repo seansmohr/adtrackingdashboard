@@ -32,6 +32,16 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS known_ads (
     ad_name TEXT PRIMARY KEY
   );
+
+  CREATE TABLE IF NOT EXISTS ad_revenue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_name TEXT NOT NULL,
+    date TEXT NOT NULL,
+    revenue REAL NOT NULL,
+    contact_name TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ad_name, date, contact_name)
+  );
 `);
 
 // Seed known ad names
@@ -79,6 +89,29 @@ const upsertSetting = db.prepare(`
   ON CONFLICT(key) DO UPDATE SET value = @value
 `);
 
+const insertRevenue = db.prepare(`
+  INSERT INTO ad_revenue (ad_name, date, revenue, contact_name)
+  VALUES (@ad_name, @date, @revenue, @contact_name)
+  ON CONFLICT(ad_name, date, contact_name) DO UPDATE SET
+    revenue = @revenue,
+    created_at = CURRENT_TIMESTAMP
+`);
+
+const getRevenueByRange = db.prepare(`
+  SELECT * FROM ad_revenue
+  WHERE date >= @start AND date <= @end
+  ORDER BY date DESC
+`);
+
+const getRevenueByAdAndRange = db.prepare(`
+  SELECT ad_name, SUM(revenue) as total_revenue, COUNT(*) as entry_count
+  FROM ad_revenue
+  WHERE date >= @start AND date <= @end
+  GROUP BY ad_name
+`);
+
+const deleteRevenue = db.prepare('DELETE FROM ad_revenue WHERE id = @id');
+
 module.exports = {
   db,
   upsertSpend,
@@ -87,4 +120,8 @@ module.exports = {
   deleteSpend,
   getSetting,
   upsertSetting,
+  insertRevenue,
+  getRevenueByRange,
+  getRevenueByAdAndRange,
+  deleteRevenue,
 };

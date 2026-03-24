@@ -10,6 +10,8 @@ const HEADERS = {
   'Content-Type': 'application/json',
 };
 
+const SALE_VALUES = ['Sale (umbrella)', 'Sale (MA)', 'Sale (MedSupp)'];
+
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -34,8 +36,8 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   }
 }
 
-async function getAdCreativeFieldKey() {
-  const cached = getSetting.get({ key: 'ad_creative_field_key' });
+async function getCustomFieldKey(fieldName, cacheKey) {
+  const cached = getSetting.get({ key: cacheKey });
   if (cached) return cached.value;
 
   const data = await fetchWithRetry(
@@ -44,20 +46,29 @@ async function getAdCreativeFieldKey() {
   );
 
   const fields = data.customFields || [];
-  const adCreativeField = fields.find(
-    (f) => f.name.toLowerCase() === 'ad creative'
+  const field = fields.find(
+    (f) => f.name.toLowerCase() === fieldName.toLowerCase()
   );
 
-  if (!adCreativeField) {
-    throw new Error('Custom field "Ad Creative" not found in GHL location');
+  if (!field) {
+    throw new Error(`Custom field "${fieldName}" not found in GHL location`);
   }
 
-  upsertSetting.run({ key: 'ad_creative_field_key', value: adCreativeField.id });
-  return adCreativeField.id;
+  upsertSetting.run({ key: cacheKey, value: field.id });
+  return field.id;
+}
+
+async function getAdCreativeFieldKey() {
+  return getCustomFieldKey('Ad Creative', 'ad_creative_field_key');
+}
+
+async function getAppointmentStatusFieldKey() {
+  return getCustomFieldKey('Appointment Status', 'appointment_status_field_key');
 }
 
 async function searchContacts(startDate, endDate) {
-  const fieldKey = await getAdCreativeFieldKey();
+  const adFieldKey = await getAdCreativeFieldKey();
+  const apptStatusFieldKey = await getAppointmentStatusFieldKey();
   const allContacts = [];
   let page = 1;
   const pageLimit = 100;
@@ -96,14 +107,27 @@ async function searchContacts(startDate, endDate) {
     }
 
     const customFields = contact.customFields || [];
-    const adField = customFields.find((cf) => cf.id === fieldKey);
+    const adField = customFields.find((cf) => cf.id === adFieldKey);
     if (adField && adField.value) {
+      // Check for "scheduled" tag (deduplicated by contact id)
+      const tags = contact.tags || [];
+      const isScheduled = tags.includes('scheduled');
+
+      // Check appointment status for sale
+      const apptStatusField = customFields.find((cf) => cf.id === apptStatusFieldKey);
+      const apptStatusValue = apptStatusField ? apptStatusField.value : '';
+      const isSale = SALE_VALUES.includes(apptStatusValue);
+
       leadsWithAd.push({
+        id: contact.id,
         name: `${contact.firstNameRaw || contact.firstName || ''} ${contact.lastNameRaw || contact.lastName || ''}`.trim(),
         email: contact.email || '',
         phone: contact.phone || '',
         date: contactDate,
         ad_name: adField.value,
+        is_scheduled: isScheduled,
+        is_sale: isSale,
+        sale_type: isSale ? apptStatusValue : null,
       });
     }
   }
@@ -111,4 +135,4 @@ async function searchContacts(startDate, endDate) {
   return leadsWithAd;
 }
 
-module.exports = { searchContacts, getAdCreativeFieldKey };
+module.exports = { searchContacts, getAdCreativeFieldKey, getAppointmentStatusFieldKey };
