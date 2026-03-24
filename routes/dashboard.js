@@ -67,7 +67,12 @@ router.get('/dashboard', async (req, res) => {
 router.get('/ads', async (req, res) => {
   try {
     const { db } = require('../db/database');
-    const rows = db.prepare('SELECT DISTINCT ad_name FROM ad_spend ORDER BY ad_name').all();
+    const rows = db.prepare(`
+      SELECT ad_name FROM known_ads
+      UNION
+      SELECT DISTINCT ad_name FROM ad_spend
+      ORDER BY ad_name
+    `).all();
     res.json({ ads: rows.map((r) => r.ad_name) });
   } catch (err) {
     console.error('Ads list error:', err);

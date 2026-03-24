@@ -227,9 +227,11 @@
   function populateAdDropdown(data) {
     const list = document.getElementById('ad-name-list');
     const names = new Set();
-    data.leads_by_ad.forEach((a) => names.add(a.ad_name));
+    if (data) {
+      data.leads_by_ad.forEach((a) => names.add(a.ad_name));
+    }
 
-    // Also fetch from spend DB
+    // Also fetch from spend DB + known ads
     api('/api/ads').then((res) => {
       (res.ads || []).forEach((n) => names.add(n));
       list.innerHTML = '';
@@ -364,4 +366,5 @@
   // Initial load
   loadDashboard();
   loadSpendEntries();
+  populateAdDropdown(null);
 })();

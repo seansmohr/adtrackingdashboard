@@ -28,7 +28,26 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS known_ads (
+    ad_name TEXT PRIMARY KEY
+  );
 `);
+
+// Seed known ad names
+const knownAds = [
+  "Winning Ad | Don't Overpay",
+  'Winning Ad | Enrollment Window',
+  'Winning Ad | One Year',
+  'Winning Ad | Not Free',
+];
+
+const insertKnownAd = db.prepare(
+  'INSERT OR IGNORE INTO known_ads (ad_name) VALUES (?)'
+);
+for (const name of knownAds) {
+  insertKnownAd.run(name);
+}
 
 const upsertSpend = db.prepare(`
   INSERT INTO ad_spend (ad_name, date, spend)
