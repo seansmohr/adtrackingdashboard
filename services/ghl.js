@@ -1,4 +1,4 @@
-const { getSetting, upsertSetting } = require('../db/database');
+const { getSetting, upsertSetting, getAdIdMap } = require('../db/database');
 
 const BASE_URL = 'https://services.leadconnectorhq.com';
 const API_KEY = process.env.GHL_API_KEY;
@@ -97,6 +97,13 @@ async function searchContacts(startDate, endDate) {
     page++;
   }
 
+  // Build ad ID → name lookup from the database
+  const adIdRows = getAdIdMap.all();
+  const adIdToName = {};
+  for (const row of adIdRows) {
+    adIdToName[row.ad_id] = row.ad_name;
+  }
+
   const leadsWithAd = [];
 
   for (const contact of allContacts) {
@@ -109,6 +116,12 @@ async function searchContacts(startDate, endDate) {
     const customFields = contact.customFields || [];
     const adField = customFields.find((cf) => cf.id === adFieldKey);
     if (adField && adField.value) {
+      // Resolve ad ID to friendly name if it's a numeric ID
+      let adName = adField.value;
+      if (adIdToName[adName]) {
+        adName = adIdToName[adName];
+      }
+
       // Check for "scheduled" tag (deduplicated by contact id)
       const tags = contact.tags || [];
       const isScheduled = tags.includes('scheduled');
@@ -124,7 +137,7 @@ async function searchContacts(startDate, endDate) {
         email: contact.email || '',
         phone: contact.phone || '',
         date: contactDate,
-        ad_name: adField.value,
+        ad_name: adName,
         is_scheduled: isScheduled,
         is_sale: isSale,
         sale_type: isSale ? apptStatusValue : null,

@@ -33,6 +33,11 @@ db.exec(`
     ad_name TEXT PRIMARY KEY
   );
 
+  CREATE TABLE IF NOT EXISTS ad_id_map (
+    ad_id TEXT PRIMARY KEY,
+    ad_name TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS ad_revenue (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_name TEXT NOT NULL,
@@ -58,6 +63,21 @@ const insertKnownAd = db.prepare(
 for (const name of knownAds) {
   insertKnownAd.run(name);
 }
+
+// Seed known ad ID → name mappings
+const knownAdIdMap = {
+  '120243275937490544': 'Winning Ad | Not Free',
+};
+
+const upsertAdIdMap = db.prepare(
+  'INSERT OR REPLACE INTO ad_id_map (ad_id, ad_name) VALUES (@ad_id, @ad_name)'
+);
+for (const [adId, adName] of Object.entries(knownAdIdMap)) {
+  upsertAdIdMap.run({ ad_id: adId, ad_name: adName });
+}
+
+const getAdIdMap = db.prepare('SELECT ad_id, ad_name FROM ad_id_map');
+const getAdNameById = db.prepare('SELECT ad_name FROM ad_id_map WHERE ad_id = @ad_id');
 
 const upsertSpend = db.prepare(`
   INSERT INTO ad_spend (ad_name, date, spend)
@@ -124,4 +144,7 @@ module.exports = {
   getRevenueByRange,
   getRevenueByAdAndRange,
   deleteRevenue,
+  upsertAdIdMap,
+  getAdIdMap,
+  getAdNameById,
 };
