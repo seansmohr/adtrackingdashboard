@@ -67,18 +67,6 @@ async function searchContacts(startDate, endDate) {
       locationId: LOCATION_ID,
       page,
       pageLimit,
-      filters: [
-        {
-          field: 'dateAdded',
-          operator: 'gte',
-          value: startDate,
-        },
-        {
-          field: 'dateAdded',
-          operator: 'lte',
-          value: endDate,
-        },
-      ],
     };
 
     const data = await fetchWithRetry(
@@ -101,6 +89,12 @@ async function searchContacts(startDate, endDate) {
   const leadsWithAd = [];
 
   for (const contact of allContacts) {
+    // Filter by date client-side
+    const contactDate = contact.dateAdded ? contact.dateAdded.split('T')[0] : '';
+    if (contactDate && (contactDate < startDate || contactDate > endDate)) {
+      continue;
+    }
+
     const customFields = contact.customFields || [];
     const adField = customFields.find((cf) => cf.id === fieldKey);
     if (adField && adField.value) {
@@ -108,7 +102,7 @@ async function searchContacts(startDate, endDate) {
         name: `${contact.firstNameRaw || contact.firstName || ''} ${contact.lastNameRaw || contact.lastName || ''}`.trim(),
         email: contact.email || '',
         phone: contact.phone || '',
-        date: contact.dateAdded ? contact.dateAdded.split('T')[0] : '',
+        date: contactDate,
         ad_name: adField.value,
       });
     }
