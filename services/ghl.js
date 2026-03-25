@@ -132,37 +132,39 @@ async function searchContacts(startDate, endDate) {
     if (!adField || !adField.value) {
       noAdField++;
     }
+
+    // Resolve ad name: use Ad Creative field if present, otherwise "Unattributed"
+    let adName = 'Unattributed';
     if (adField && adField.value) {
-      // Resolve ad ID to friendly name if it's a numeric ID
-      let adName = adField.value;
+      adName = adField.value;
       if (adIdToName[adName]) {
         adName = adIdToName[adName];
       }
-
-      // Check for "scheduled" tag (deduplicated by contact id)
-      const tags = contact.tags || [];
-      const isScheduled = tags.includes('scheduled');
-
-      // Check appointment status for sale
-      const apptStatusField = customFields.find((cf) => cf.id === apptStatusFieldKey);
-      const apptStatusValue = apptStatusField ? apptStatusField.value : '';
-      const isSale = SALE_VALUES.includes(apptStatusValue);
-
-      leadsWithAd.push({
-        id: contact.id,
-        name: `${contact.firstNameRaw || contact.firstName || ''} ${contact.lastNameRaw || contact.lastName || ''}`.trim(),
-        email: contact.email || '',
-        phone: contact.phone || '',
-        date: contactDate,
-        ad_name: adName,
-        is_scheduled: isScheduled,
-        is_sale: isSale,
-        sale_type: isSale ? apptStatusValue : null,
-      });
     }
+
+    // Check for "scheduled" tag (deduplicated by contact id)
+    const tags = contact.tags || [];
+    const isScheduled = tags.includes('scheduled');
+
+    // Check appointment status for sale
+    const apptStatusField = customFields.find((cf) => cf.id === apptStatusFieldKey);
+    const apptStatusValue = apptStatusField ? apptStatusField.value : '';
+    const isSale = SALE_VALUES.includes(apptStatusValue);
+
+    leadsWithAd.push({
+      id: contact.id,
+      name: `${contact.firstNameRaw || contact.firstName || ''} ${contact.lastNameRaw || contact.lastName || ''}`.trim(),
+      email: contact.email || '',
+      phone: contact.phone || '',
+      date: contactDate,
+      ad_name: adName,
+      is_scheduled: isScheduled,
+      is_sale: isSale,
+      sale_type: isSale ? apptStatusValue : null,
+    });
   }
 
-  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field, ${leadsWithAd.length} leads with ad data`);
+  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field (counted as Unattributed), ${leadsWithAd.length} total leads`);
 
   return leadsWithAd;
 }
