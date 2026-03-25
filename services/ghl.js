@@ -94,9 +94,12 @@ async function searchContacts(startDate, endDate) {
     allContacts.push(...contacts);
 
     const total = data.total || 0;
+    console.log(`GHL search page ${page}: got ${contacts.length} contacts (${allContacts.length}/${total} total)`);
     if (allContacts.length >= total || contacts.length === 0) break;
     page++;
   }
+
+  console.log(`GHL search complete: ${allContacts.length} total contacts fetched`);
 
   // Build ad ID → name lookup from the database
   const adIdRows = getAdIdMap.all();
@@ -106,6 +109,9 @@ async function searchContacts(startDate, endDate) {
   }
 
   const leadsWithAd = [];
+  let dateFiltered = 0;
+  let noAdField = 0;
+  let inRangeTotal = 0;
 
   for (const contact of allContacts) {
     // Filter by date client-side
@@ -116,11 +122,16 @@ async function searchContacts(startDate, endDate) {
       contactDate = parts; // en-CA locale gives YYYY-MM-DD format
     }
     if (contactDate && (contactDate < startDate || contactDate > endDate)) {
+      dateFiltered++;
       continue;
     }
+    inRangeTotal++;
 
     const customFields = contact.customFields || [];
     const adField = customFields.find((cf) => cf.id === adFieldKey);
+    if (!adField || !adField.value) {
+      noAdField++;
+    }
     if (adField && adField.value) {
       // Resolve ad ID to friendly name if it's a numeric ID
       let adName = adField.value;
@@ -150,6 +161,8 @@ async function searchContacts(startDate, endDate) {
       });
     }
   }
+
+  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field, ${leadsWithAd.length} leads with ad data`);
 
   return leadsWithAd;
 }
