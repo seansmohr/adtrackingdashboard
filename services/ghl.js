@@ -11,6 +11,7 @@ const HEADERS = {
 };
 
 const SALE_VALUES = ['Sale (umbrella)', 'Sale (MA)', 'Sale (MedSupp)'];
+const BUSINESS_TZ = process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles';
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -108,7 +109,12 @@ async function searchContacts(startDate, endDate) {
 
   for (const contact of allContacts) {
     // Filter by date client-side
-    const contactDate = contact.dateAdded ? contact.dateAdded.split('T')[0] : '';
+    let contactDate = '';
+    if (contact.dateAdded) {
+      const dt = new Date(contact.dateAdded);
+      const parts = dt.toLocaleDateString('en-CA', { timeZone: BUSINESS_TZ });
+      contactDate = parts; // en-CA locale gives YYYY-MM-DD format
+    }
     if (contactDate && (contactDate < startDate || contactDate > endDate)) {
       continue;
     }
