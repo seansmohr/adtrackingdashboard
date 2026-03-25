@@ -131,15 +131,13 @@ async function searchContacts(startDate, endDate) {
     const adField = customFields.find((cf) => cf.id === adFieldKey);
     if (!adField || !adField.value) {
       noAdField++;
+      continue;
     }
 
-    // Resolve ad name: use Ad Creative field if present, otherwise "Unattributed"
-    let adName = 'Unattributed';
-    if (adField && adField.value) {
-      adName = adField.value;
-      if (adIdToName[adName]) {
-        adName = adIdToName[adName];
-      }
+    // Resolve ad ID to friendly name if it's a numeric ID
+    let adName = adField.value;
+    if (adIdToName[adName]) {
+      adName = adIdToName[adName];
     }
 
     // Check for "scheduled" tag (deduplicated by contact id)
@@ -164,7 +162,7 @@ async function searchContacts(startDate, endDate) {
     });
   }
 
-  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field (counted as Unattributed), ${leadsWithAd.length} total leads`);
+  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field, ${leadsWithAd.length} leads with ad data`);
 
   return leadsWithAd;
 }
