@@ -73,6 +73,7 @@ router.get('/dashboard', async (req, res) => {
       const cpl = spend > 0 && leadCount > 0 ? spend / leadCount : 0;
       const leadToApptPct = leadCount > 0 ? (apptCount / leadCount) * 100 : 0;
       const leadToSalePct = leadCount > 0 ? (saleCount / leadCount) * 100 : 0;
+      const cpa = spend > 0 && apptCount > 0 ? spend / apptCount : 0;
       const roas = spend > 0 ? revenue / spend : 0;
       const avgRevPerClient = saleCount > 0 ? revenue / saleCount : 0;
 
@@ -90,6 +91,7 @@ router.get('/dashboard', async (req, res) => {
         total_spend: Math.round(spend * 100) / 100,
         total_revenue: Math.round(revenue * 100) / 100,
         cpl: Math.round(cpl * 100) / 100,
+        cpa: Math.round(cpa * 100) / 100,
         lead_to_appt_pct: Math.round(leadToApptPct * 10) / 10,
         lead_to_sale_pct: Math.round(leadToSalePct * 10) / 10,
         roas: Math.round(roas * 100) / 100,
@@ -110,6 +112,7 @@ router.get('/dashboard', async (req, res) => {
         total_appts: totalAppts,
         total_sales: totalSales,
         avg_cpl: totalLeads > 0 ? Math.round((totalSpend / totalLeads) * 100) / 100 : 0,
+        avg_cpa: totalAppts > 0 ? Math.round((totalSpend / totalAppts) * 100) / 100 : 0,
         avg_roas: totalSpend > 0 ? Math.round((totalRevenue / totalSpend) * 100) / 100 : 0,
       },
       date_range: { start, end },

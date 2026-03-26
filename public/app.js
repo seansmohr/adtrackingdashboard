@@ -93,6 +93,7 @@
     document.getElementById('total-spend').textContent = money(data.totals.total_spend);
     document.getElementById('total-revenue').textContent = money(data.totals.total_revenue);
     document.getElementById('avg-cpl').textContent = data.totals.total_leads > 0 ? money(data.totals.avg_cpl) : '—';
+    document.getElementById('avg-cpa').textContent = data.totals.total_appts > 0 ? money(data.totals.avg_cpa) : '—';
     document.getElementById('avg-roas').textContent = data.totals.total_spend > 0 ? data.totals.avg_roas.toFixed(2) + 'x' : '—';
     document.getElementById('active-ads').textContent = data.leads_by_ad.length;
 
@@ -144,6 +145,7 @@
         <td>${ad.sale_count}</td>
         <td class="spend-cell" data-ad="${esc(ad.ad_name)}">${money(ad.total_spend)}</td>
         <td>${ad.total_spend > 0 ? money(ad.cpl) : '—'}</td>
+        <td>${ad.total_spend > 0 && ad.appt_count > 0 ? money(ad.cpa) : '—'}</td>
         <td>${ad.pct.toFixed(1)}%</td>
         <td>${ad.lead_to_appt_pct.toFixed(1)}%</td>
         <td>${ad.lead_to_sale_pct.toFixed(1)}%</td>
