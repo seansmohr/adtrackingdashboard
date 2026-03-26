@@ -55,6 +55,7 @@ const knownAds = [
   'Winning Ad | Enrollment Window',
   'Winning Ad | One Year',
   'Winning Ad | Not Free',
+  'Test Ad | Worst Mistake',
 ];
 
 const insertKnownAd = db.prepare(
