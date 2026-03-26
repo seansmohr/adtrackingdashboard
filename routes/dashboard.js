@@ -46,6 +46,18 @@ router.get('/dashboard', async (req, res) => {
       revenueMap[row.ad_name] = row.total_revenue;
     }
 
+    // Ensure ads with spend or revenue data appear even if they have no leads
+    for (const adName of Object.keys(spendMap)) {
+      if (!grouped[adName]) {
+        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), sales: [] };
+      }
+    }
+    for (const adName of Object.keys(revenueMap)) {
+      if (!grouped[adName]) {
+        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), sales: [] };
+      }
+    }
+
     let totalLeads = 0;
     let totalSpend = 0;
     let totalAppts = 0;
