@@ -70,6 +70,7 @@ const knownAdIdMap = {
   '120243275838750544': 'Winning Ad | Enrollment Window',
   '120243275895790544': 'Winning Ad | One Year',
   '120243275937490544': 'Winning Ad | Not Free',
+  '120243449557000544': 'Test Ad | Worst Mistake',
 };
 
 const upsertAdIdMap = db.prepare(
