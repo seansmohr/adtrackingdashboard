@@ -140,20 +140,34 @@ async function searchContacts(startDate, endDate) {
       adName = adIdToName[adName];
     }
 
+    // Fetch full contact details to get latest custom fields and tags
+    let fullContact = contact;
+    try {
+      fullContact = await fetchWithRetry(
+        `${BASE_URL}/contacts/${contact.id}`,
+        { method: 'GET', headers: HEADERS }
+      );
+      fullContact = fullContact.contact || fullContact;
+    } catch (err) {
+      console.log(`Failed to fetch full contact ${contact.id}, using search data: ${err.message}`);
+    }
+
+    const fullCustomFields = fullContact.customFields || [];
+
     // Check for "scheduled" tag (deduplicated by contact id)
-    const tags = contact.tags || [];
+    const tags = fullContact.tags || [];
     const isScheduled = tags.includes('scheduled');
 
     // Check appointment status for sale
-    const apptStatusField = customFields.find((cf) => cf.id === apptStatusFieldKey);
+    const apptStatusField = fullCustomFields.find((cf) => cf.id === apptStatusFieldKey);
     const apptStatusValue = apptStatusField ? apptStatusField.value : '';
     const isSale = SALE_VALUES.includes(apptStatusValue);
 
     leadsWithAd.push({
       id: contact.id,
-      name: `${contact.firstNameRaw || contact.firstName || ''} ${contact.lastNameRaw || contact.lastName || ''}`.trim(),
-      email: contact.email || '',
-      phone: contact.phone || '',
+      name: `${fullContact.firstNameRaw || fullContact.firstName || contact.firstName || ''} ${fullContact.lastNameRaw || fullContact.lastName || contact.lastName || ''}`.trim(),
+      email: fullContact.email || contact.email || '',
+      phone: fullContact.phone || contact.phone || '',
       date: contactDate,
       ad_name: adName,
       is_scheduled: isScheduled,
