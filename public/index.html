@@ -166,7 +166,10 @@
         </div>
         <div class="form-group">
           <label for="revenue-contact">Contact Name</label>
-          <input type="text" id="revenue-contact" placeholder="Name of sold contact">
+          <div class="combo-input">
+            <input type="text" id="revenue-contact" list="contact-name-list" placeholder="Select contact">
+            <datalist id="contact-name-list"></datalist>
+          </div>
         </div>
         <button id="btn-save-revenue" class="btn btn-primary">Save Revenue</button>
       </div>

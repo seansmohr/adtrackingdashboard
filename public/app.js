@@ -111,6 +111,7 @@
     document.getElementById('performance-table').classList.remove('hidden');
     renderTable(data);
     populateAdDropdown(data);
+    populateContactDropdown(data);
   }
 
   function renderTable(data) {
@@ -277,6 +278,26 @@
         list.appendChild(opt);
       });
     }).catch(() => {});
+  }
+
+  function populateContactDropdown(data) {
+    const list = document.getElementById('contact-name-list');
+    list.innerHTML = '';
+    if (!data) return;
+    const contacts = new Set();
+    data.leads_by_ad.forEach((ad) => {
+      if (ad.sales) {
+        ad.sales.forEach((s) => { if (s.name) contacts.add(s.name); });
+      }
+      if (ad.leads) {
+        ad.leads.forEach((l) => { if (l.name) contacts.add(l.name); });
+      }
+    });
+    [...contacts].sort().forEach((name) => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      list.appendChild(opt);
+    });
   }
 
   // Spend entries

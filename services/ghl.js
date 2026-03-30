@@ -158,10 +158,27 @@ async function searchContacts(startDate, endDate) {
     const tags = fullContact.tags || [];
     const isScheduled = tags.includes('scheduled');
 
-    // Check appointment status for sale
-    const apptStatusField = fullCustomFields.find((cf) => cf.id === apptStatusFieldKey);
-    const apptStatusValue = apptStatusField ? apptStatusField.value : '';
+    // Check appointment status for sale (match by id, key, or name)
+    let apptStatusField = fullCustomFields.find(
+      (cf) => cf.id === apptStatusFieldKey || cf.key === apptStatusFieldKey
+    );
+    if (!apptStatusField) {
+      apptStatusField = fullCustomFields.find(
+        (cf) => (cf.name || '').toLowerCase() === 'appointment status'
+      );
+    }
+    const apptStatusValue = apptStatusField
+      ? (apptStatusField.value || apptStatusField.fieldValue || '')
+      : '';
     const isSale = SALE_VALUES.includes(apptStatusValue);
+
+    // Log appointment status for all contacts to help debug
+    const cName = `${fullContact.firstName || ''} ${fullContact.lastName || ''}`.trim();
+    if (apptStatusValue) {
+      console.log(`Contact "${cName}" appointment status: "${apptStatusValue}", isSale: ${isSale}`);
+    } else {
+      console.log(`Contact "${cName}" has no appointment status field (checked ${fullCustomFields.length} custom fields)`);
+    }
 
     leadsWithAd.push({
       id: contact.id,
