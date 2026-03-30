@@ -81,6 +81,36 @@ for (const [adId, adName] of Object.entries(knownAdIdMap)) {
   upsertAdIdMap.run({ ad_id: adId, ad_name: adName });
 }
 
+// Seed historical spend data so it persists across deploys
+const seedSpendData = [
+  { ad_name: 'Winning Ad | Not Free', date: '2026-03-25', spend: 176.21 },
+  { ad_name: 'Winning Ad | One Year', date: '2026-03-25', spend: 0.32 },
+  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-25', spend: 0.30 },
+  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-25', spend: 2.57 },
+  { ad_name: 'Winning Ad | Not Free', date: '2026-03-26', spend: 116.25 },
+  { ad_name: 'Winning Ad | One Year', date: '2026-03-26', spend: 0.41 },
+  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-26', spend: 0.22 },
+  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-26', spend: 0.28 },
+  { ad_name: 'Winning Ad | Not Free', date: '2026-03-27', spend: 99.72 },
+  { ad_name: 'Winning Ad | One Year', date: '2026-03-27', spend: 0.21 },
+  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-27', spend: 0.00 },
+  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-27', spend: 0.06 },
+  { ad_name: 'Winning Ad | Not Free', date: '2026-03-28', spend: 51.91 },
+  { ad_name: 'Winning Ad | One Year', date: '2026-03-28', spend: 0.00 },
+  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-28', spend: 0.02 },
+  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-28', spend: 0.24 },
+  { ad_name: 'Winning Ad | Not Free', date: '2026-03-29', spend: 108.27 },
+];
+
+const seedUpsertSpend = db.prepare(`
+  INSERT INTO ad_spend (ad_name, date, spend)
+  VALUES (@ad_name, @date, @spend)
+  ON CONFLICT(ad_name, date) DO NOTHING
+`);
+for (const entry of seedSpendData) {
+  seedUpsertSpend.run(entry);
+}
+
 const getAdIdMap = db.prepare('SELECT ad_id, ad_name FROM ad_id_map');
 const getAdNameById = db.prepare('SELECT ad_name FROM ad_id_map WHERE ad_id = @ad_id');
 
