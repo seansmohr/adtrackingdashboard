@@ -10,7 +10,7 @@ const HEADERS = {
   'Content-Type': 'application/json',
 };
 
-const SALE_VALUES = ['Sale (umbrella)', 'Sale (MA)', 'Sale (MedSupp)'];
+const SALE_VALUES = ['sale (umbrella)', 'sale (ma)', 'sale (medsupp)'];
 const BUSINESS_TZ = process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles';
 
 async function sleep(ms) {
@@ -170,7 +170,7 @@ async function searchContacts(startDate, endDate) {
     const apptStatusValue = apptStatusField
       ? (apptStatusField.value || apptStatusField.fieldValue || '')
       : '';
-    const isSale = SALE_VALUES.includes(apptStatusValue);
+    const isSale = apptStatusValue ? SALE_VALUES.includes(apptStatusValue.toLowerCase()) : false;
 
     // Log appointment status for all contacts to help debug
     const cName = `${fullContact.firstName || ''} ${fullContact.lastName || ''}`.trim();
