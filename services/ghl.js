@@ -107,8 +107,11 @@ async function getContactBookingType(contactId) {
   if (!t65Id && !vaId) return 'unknown';
 
   try {
+    // startTime and endTime are required — use a wide range to capture all events
+    const startTime = new Date('2020-01-01T00:00:00Z').toISOString();
+    const endTime = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
     const data = await fetchWithRetry(
-      `${BASE_URL}/calendars/events?contactId=${contactId}&locationId=${LOCATION_ID}`,
+      `${BASE_URL}/calendars/events?contactId=${contactId}&locationId=${LOCATION_ID}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`,
       { method: 'GET', headers: HEADERS }
     );
 
