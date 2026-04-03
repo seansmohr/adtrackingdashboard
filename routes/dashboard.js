@@ -15,7 +15,14 @@ router.get('/dashboard', async (req, res) => {
     const grouped = {};
     for (const lead of leads) {
       if (!grouped[lead.ad_name]) {
-        grouped[lead.ad_name] = { ad_name: lead.ad_name, leads: [], scheduled_ids: new Set(), sales: [] };
+        grouped[lead.ad_name] = {
+          ad_name: lead.ad_name,
+          leads: [],
+          scheduled_ids: new Set(),
+          autobooked_ids: new Set(),
+          va_booked_ids: new Set(),
+          sales: [],
+        };
       }
       const g = grouped[lead.ad_name];
       g.leads.push(lead);
@@ -23,6 +30,11 @@ router.get('/dashboard', async (req, res) => {
       // Deduplicate appointments by contact id
       if (lead.is_scheduled) {
         g.scheduled_ids.add(lead.id);
+        if (lead.booking_type === 'autobooked') {
+          g.autobooked_ids.add(lead.id);
+        } else if (lead.booking_type === 'va_booked') {
+          g.va_booked_ids.add(lead.id);
+        }
       }
 
       if (lead.is_sale) {
@@ -49,12 +61,12 @@ router.get('/dashboard', async (req, res) => {
     // Ensure ads with spend or revenue data appear even if they have no leads
     for (const adName of Object.keys(spendMap)) {
       if (!grouped[adName]) {
-        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), sales: [] };
+        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), autobooked_ids: new Set(), va_booked_ids: new Set(), sales: [] };
       }
     }
     for (const adName of Object.keys(revenueMap)) {
       if (!grouped[adName]) {
-        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), sales: [] };
+        grouped[adName] = { ad_name: adName, leads: [], scheduled_ids: new Set(), autobooked_ids: new Set(), va_booked_ids: new Set(), sales: [] };
       }
     }
 
@@ -63,10 +75,14 @@ router.get('/dashboard', async (req, res) => {
     let totalAppts = 0;
     let totalSales = 0;
     let totalRevenue = 0;
+    let totalAutobooked = 0;
+    let totalVaBooked = 0;
 
     const leadsByAd = Object.values(grouped).map((group) => {
       const leadCount = group.leads.length;
       const apptCount = group.scheduled_ids.size;
+      const autobookedCount = group.autobooked_ids.size;
+      const vaBookedCount = group.va_booked_ids.size;
       const saleCount = group.sales.length;
       const spend = spendMap[group.ad_name] || 0;
       const revenue = revenueMap[group.ad_name] || 0;
@@ -82,11 +98,15 @@ router.get('/dashboard', async (req, res) => {
       totalAppts += apptCount;
       totalSales += saleCount;
       totalRevenue += revenue;
+      totalAutobooked += autobookedCount;
+      totalVaBooked += vaBookedCount;
 
       return {
         ad_name: group.ad_name,
         lead_count: leadCount,
         appt_count: apptCount,
+        autobooked_count: autobookedCount,
+        va_booked_count: vaBookedCount,
         sale_count: saleCount,
         total_spend: Math.round(spend * 100) / 100,
         total_revenue: Math.round(revenue * 100) / 100,
@@ -110,6 +130,8 @@ router.get('/dashboard', async (req, res) => {
         total_spend: Math.round(totalSpend * 100) / 100,
         total_revenue: Math.round(totalRevenue * 100) / 100,
         total_appts: totalAppts,
+        total_autobooked: totalAutobooked,
+        total_va_booked: totalVaBooked,
         total_sales: totalSales,
         avg_cpl: totalLeads > 0 ? Math.round((totalSpend / totalLeads) * 100) / 100 : 0,
         avg_cpa: totalAppts > 0 ? Math.round((totalSpend / totalAppts) * 100) / 100 : 0,

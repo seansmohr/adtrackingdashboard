@@ -89,6 +89,8 @@
     // Metrics
     document.getElementById('total-leads').textContent = data.totals.total_leads;
     document.getElementById('total-appts').textContent = data.totals.total_appts;
+    document.getElementById('total-autobooked').textContent = data.totals.total_autobooked;
+    document.getElementById('total-va-booked').textContent = data.totals.total_va_booked;
     document.getElementById('total-sales').textContent = data.totals.total_sales;
     document.getElementById('total-spend').textContent = money(data.totals.total_spend);
     document.getElementById('total-revenue').textContent = money(data.totals.total_revenue);
@@ -143,6 +145,8 @@
         <td><strong>${esc(ad.ad_name)}</strong></td>
         <td>${ad.lead_count}</td>
         <td>${ad.appt_count}</td>
+        <td>${ad.autobooked_count}</td>
+        <td>${ad.va_booked_count}</td>
         <td>${ad.sale_count}</td>
         <td class="spend-cell" data-ad="${esc(ad.ad_name)}">${money(ad.total_spend)}</td>
         <td>${ad.total_spend > 0 ? money(ad.cpl) : '—'}</td>
@@ -180,16 +184,17 @@
 
           const detailRow = document.createElement('tr');
           detailRow.className = 'lead-detail-row';
-          detailRow.innerHTML = `<td colspan="12"><div class="lead-detail">
+          detailRow.innerHTML = `<td colspan="15"><div class="lead-detail">
             <h4>Lead Details</h4>
             <table>
-              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Date</th><th>Appt</th><th>Sale</th></tr></thead>
+              <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Date</th><th>Appt</th><th>Booking</th><th>Sale</th></tr></thead>
               <tbody>${ad.leads.map((l) => `<tr>
                 <td>${esc(l.name)}</td>
                 <td>${esc(l.email)}</td>
                 <td>${esc(l.phone)}</td>
                 <td>${esc(l.date)}</td>
                 <td>${l.is_scheduled ? 'Yes' : ''}</td>
+                <td>${l.booking_type === 'autobooked' ? 'Auto (T65)' : l.booking_type === 'va_booked' ? 'VA' : ''}</td>
                 <td>${l.is_sale ? esc(l.sale_type) : ''}</td>
               </tr>`).join('')}</tbody>
             </table>

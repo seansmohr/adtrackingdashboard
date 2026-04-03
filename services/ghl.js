@@ -13,6 +13,10 @@ const HEADERS = {
 const SALE_VALUES = ['sale (umbrella)', 'sale (ma)', 'sale (medsupp)'];
 const BUSINESS_TZ = process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles';
 
+// Calendar names to match (case-insensitive)
+const T65_CALENDAR_NAME = 't65';
+const VA_CALENDAR_NAME = 'va calendar';
+
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -65,6 +69,64 @@ async function getAdCreativeFieldKey() {
 
 async function getAppointmentStatusFieldKey() {
   return getCustomFieldKey('Appointment Status', 'appointment_status_field_key');
+}
+
+// Cache calendar IDs for T65 and VA calendars
+let calendarCache = null;
+
+async function getCalendarIds() {
+  if (calendarCache) return calendarCache;
+
+  const data = await fetchWithRetry(
+    `${BASE_URL}/calendars/?locationId=${LOCATION_ID}`,
+    { method: 'GET', headers: HEADERS }
+  );
+
+  const calendars = data.calendars || [];
+  let t65Id = null;
+  let vaId = null;
+
+  for (const cal of calendars) {
+    const name = (cal.name || '').toLowerCase();
+    console.log(`Found calendar: "${cal.name}" (id: ${cal.id})`);
+    if (name.includes(T65_CALENDAR_NAME)) {
+      t65Id = cal.id;
+    }
+    if (name.includes(VA_CALENDAR_NAME)) {
+      vaId = cal.id;
+    }
+  }
+
+  calendarCache = { t65Id, vaId };
+  console.log(`Calendar IDs — T65: ${t65Id}, VA: ${vaId}`);
+  return calendarCache;
+}
+
+async function getContactBookingType(contactId) {
+  const { t65Id, vaId } = await getCalendarIds();
+  if (!t65Id && !vaId) return 'unknown';
+
+  try {
+    const data = await fetchWithRetry(
+      `${BASE_URL}/calendars/events?contactId=${contactId}&locationId=${LOCATION_ID}`,
+      { method: 'GET', headers: HEADERS }
+    );
+
+    const events = data.events || [];
+    if (events.length === 0) return 'unknown';
+
+    // Use the most recent event
+    const sorted = events.sort((a, b) => new Date(b.startTime || b.start) - new Date(a.startTime || a.start));
+    const latestEvent = sorted[0];
+    const calId = latestEvent.calendarId;
+
+    if (calId === t65Id) return 'autobooked';
+    if (calId === vaId) return 'va_booked';
+    return 'other';
+  } catch (err) {
+    console.log(`Failed to get calendar events for contact ${contactId}: ${err.message}`);
+    return 'unknown';
+  }
 }
 
 async function searchContacts(startDate, endDate) {
@@ -158,6 +220,12 @@ async function searchContacts(startDate, endDate) {
     const tags = fullContact.tags || [];
     const isScheduled = tags.includes('scheduled');
 
+    // Determine booking type (autobooked via T65 or VA-booked)
+    let bookingType = null;
+    if (isScheduled) {
+      bookingType = await getContactBookingType(contact.id);
+    }
+
     // Check appointment status for sale (match by id, key, or name)
     let apptStatusField = fullCustomFields.find(
       (cf) => cf.id === apptStatusFieldKey || cf.key === apptStatusFieldKey
@@ -188,6 +256,7 @@ async function searchContacts(startDate, endDate) {
       date: contactDate,
       ad_name: adName,
       is_scheduled: isScheduled,
+      booking_type: bookingType,
       is_sale: isSale,
       sale_type: isSale ? apptStatusValue : null,
     });
