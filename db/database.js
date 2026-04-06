@@ -56,6 +56,7 @@ const knownAds = [
   'Winning Ad | One Year',
   'Winning Ad | Not Free',
   'Test Ad | Worst Mistake',
+  'Winning Ad | Not Ready',
 ];
 
 const insertKnownAd = db.prepare(
@@ -72,6 +73,7 @@ const knownAdIdMap = {
   '120243275895790544': 'Winning Ad | One Year',
   '120243275937490544': 'Winning Ad | Not Free',
   '120243449557000544': 'Test Ad | Worst Mistake',
+  '120244123017720544': 'Winning Ad | Not Ready',
 };
 
 const upsertAdIdMap = db.prepare(
