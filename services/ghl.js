@@ -10,12 +10,7 @@ const HEADERS = {
   'Content-Type': 'application/json',
 };
 
-const SALE_VALUES = ['sale (umbrella)', 'sale (ma)', 'sale (medsupp)'];
 const BUSINESS_TZ = process.env.BUSINESS_TIMEZONE || 'America/Los_Angeles';
-
-// Calendar names to match (case-insensitive)
-const T65_CALENDAR_NAME = 't65';
-const VA_CALENDAR_NAME = 'va calendar';
 
 async function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -67,74 +62,8 @@ async function getAdCreativeFieldKey() {
   return getCustomFieldKey('Ad Creative', 'ad_creative_field_key');
 }
 
-async function getAppointmentStatusFieldKey() {
-  return getCustomFieldKey('Appointment Status', 'appointment_status_field_key');
-}
-
-// Cache calendar IDs for T65 and VA calendars
-let calendarCache = null;
-
-async function getCalendarIds() {
-  if (calendarCache) return calendarCache;
-
-  const data = await fetchWithRetry(
-    `${BASE_URL}/calendars/?locationId=${LOCATION_ID}`,
-    { method: 'GET', headers: HEADERS }
-  );
-
-  const calendars = data.calendars || [];
-  let t65Id = null;
-  let vaId = null;
-
-  for (const cal of calendars) {
-    const name = (cal.name || '').toLowerCase();
-    console.log(`Found calendar: "${cal.name}" (id: ${cal.id})`);
-    if (name.includes(T65_CALENDAR_NAME)) {
-      t65Id = cal.id;
-    }
-    if (name.includes(VA_CALENDAR_NAME)) {
-      vaId = cal.id;
-    }
-  }
-
-  calendarCache = { t65Id, vaId };
-  console.log(`Calendar IDs — T65: ${t65Id}, VA: ${vaId}`);
-  return calendarCache;
-}
-
-async function getContactBookingType(contactId) {
-  const { t65Id, vaId } = await getCalendarIds();
-  if (!t65Id && !vaId) return 'unknown';
-
-  try {
-    // startTime and endTime are required — use a wide range to capture all events
-    const startTime = new Date('2020-01-01T00:00:00Z').toISOString();
-    const endTime = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-    const data = await fetchWithRetry(
-      `${BASE_URL}/calendars/events?contactId=${contactId}&locationId=${LOCATION_ID}&startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`,
-      { method: 'GET', headers: HEADERS }
-    );
-
-    const events = data.events || [];
-    if (events.length === 0) return 'unknown';
-
-    // Use the most recent event
-    const sorted = events.sort((a, b) => new Date(b.startTime || b.start) - new Date(a.startTime || a.start));
-    const latestEvent = sorted[0];
-    const calId = latestEvent.calendarId;
-
-    if (calId === t65Id) return 'autobooked';
-    if (calId === vaId) return 'va_booked';
-    return 'other';
-  } catch (err) {
-    console.log(`Failed to get calendar events for contact ${contactId}: ${err.message}`);
-    return 'unknown';
-  }
-}
-
 async function searchContacts(startDate, endDate) {
   const adFieldKey = await getAdCreativeFieldKey();
-  const apptStatusFieldKey = await getAppointmentStatusFieldKey();
   const allContacts = [];
   let page = 1;
   const pageLimit = 100;
@@ -174,9 +103,6 @@ async function searchContacts(startDate, endDate) {
   }
 
   const leadsWithAd = [];
-  let dateFiltered = 0;
-  let noAdField = 0;
-  let inRangeTotal = 0;
 
   for (const contact of allContacts) {
     // Filter by date client-side
@@ -184,18 +110,15 @@ async function searchContacts(startDate, endDate) {
     if (contact.dateAdded) {
       const dt = new Date(contact.dateAdded);
       const parts = dt.toLocaleDateString('en-CA', { timeZone: BUSINESS_TZ });
-      contactDate = parts; // en-CA locale gives YYYY-MM-DD format
+      contactDate = parts;
     }
     if (contactDate && (contactDate < startDate || contactDate > endDate)) {
-      dateFiltered++;
       continue;
     }
-    inRangeTotal++;
 
     const customFields = contact.customFields || [];
     const adField = customFields.find((cf) => cf.id === adFieldKey);
     if (!adField || !adField.value) {
-      noAdField++;
       continue;
     }
 
@@ -205,69 +128,24 @@ async function searchContacts(startDate, endDate) {
       adName = adIdToName[adName];
     }
 
-    // Fetch full contact details to get latest custom fields and tags
-    let fullContact = contact;
-    try {
-      fullContact = await fetchWithRetry(
-        `${BASE_URL}/contacts/${contact.id}`,
-        { method: 'GET', headers: HEADERS }
-      );
-      fullContact = fullContact.contact || fullContact;
-    } catch (err) {
-      console.log(`Failed to fetch full contact ${contact.id}, using search data: ${err.message}`);
-    }
-
-    const fullCustomFields = fullContact.customFields || [];
-
-    // Check for "scheduled" tag (deduplicated by contact id)
-    const tags = fullContact.tags || [];
+    // Check for "scheduled" tag
+    const tags = contact.tags || [];
     const isScheduled = tags.includes('scheduled');
-
-    // Determine booking type (autobooked via T65 or VA-booked)
-    let bookingType = null;
-    if (isScheduled) {
-      bookingType = await getContactBookingType(contact.id);
-    }
-
-    // Check appointment status for sale (match by id, key, or name)
-    let apptStatusField = fullCustomFields.find(
-      (cf) => cf.id === apptStatusFieldKey || cf.key === apptStatusFieldKey
-    );
-    if (!apptStatusField) {
-      apptStatusField = fullCustomFields.find(
-        (cf) => (cf.name || '').toLowerCase() === 'appointment status'
-      );
-    }
-    const apptStatusValue = apptStatusField
-      ? (apptStatusField.value || apptStatusField.fieldValue || '')
-      : '';
-    const isSale = apptStatusValue ? SALE_VALUES.includes(apptStatusValue.toLowerCase()) : false;
-
-    // Log appointment status for all contacts to help debug
-    const cName = `${fullContact.firstName || ''} ${fullContact.lastName || ''}`.trim();
-    if (apptStatusValue) {
-      console.log(`Contact "${cName}" appointment status: "${apptStatusValue}", isSale: ${isSale}`);
-    } else {
-      console.log(`Contact "${cName}" has no appointment status field (checked ${fullCustomFields.length} custom fields)`);
-    }
 
     leadsWithAd.push({
       id: contact.id,
-      name: `${fullContact.firstNameRaw || fullContact.firstName || contact.firstName || ''} ${fullContact.lastNameRaw || fullContact.lastName || contact.lastName || ''}`.trim(),
-      email: fullContact.email || contact.email || '',
-      phone: fullContact.phone || contact.phone || '',
+      name: `${contact.firstName || ''} ${contact.lastName || ''}`.trim(),
+      email: contact.email || '',
+      phone: contact.phone || '',
       date: contactDate,
       ad_name: adName,
       is_scheduled: isScheduled,
-      booking_type: bookingType,
-      is_sale: isSale,
-      sale_type: isSale ? apptStatusValue : null,
     });
   }
 
-  console.log(`GHL filter results for ${startDate} to ${endDate}: ${dateFiltered} outside date range, ${inRangeTotal} in range, ${noAdField} missing Ad Creative field, ${leadsWithAd.length} leads with ad data`);
+  console.log(`GHL filter results for ${startDate} to ${endDate}: ${leadsWithAd.length} leads with ad data`);
 
   return leadsWithAd;
 }
 
-module.exports = { searchContacts, getAdCreativeFieldKey, getAppointmentStatusFieldKey };
+module.exports = { searchContacts };

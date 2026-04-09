@@ -15,15 +15,6 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS ad_spend (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ad_name TEXT NOT NULL,
-    date TEXT NOT NULL,
-    spend REAL NOT NULL,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(ad_name, date)
-  );
-
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT
@@ -36,16 +27,6 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS ad_id_map (
     ad_id TEXT PRIMARY KEY,
     ad_name TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS ad_revenue (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ad_name TEXT NOT NULL,
-    date TEXT NOT NULL,
-    revenue REAL NOT NULL,
-    contact_name TEXT,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(ad_name, date, contact_name)
   );
 `);
 
@@ -83,61 +64,7 @@ for (const [adId, adName] of Object.entries(knownAdIdMap)) {
   upsertAdIdMap.run({ ad_id: adId, ad_name: adName });
 }
 
-// Seed historical spend data so it persists across deploys
-const seedSpendData = [
-  { ad_name: 'Winning Ad | Not Free', date: '2026-03-25', spend: 176.21 },
-  { ad_name: 'Winning Ad | One Year', date: '2026-03-25', spend: 0.32 },
-  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-25', spend: 0.30 },
-  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-25', spend: 2.57 },
-  { ad_name: 'Winning Ad | Not Free', date: '2026-03-26', spend: 116.25 },
-  { ad_name: 'Winning Ad | One Year', date: '2026-03-26', spend: 0.41 },
-  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-26', spend: 0.22 },
-  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-26', spend: 0.28 },
-  { ad_name: 'Winning Ad | Not Free', date: '2026-03-27', spend: 99.72 },
-  { ad_name: 'Winning Ad | One Year', date: '2026-03-27', spend: 0.21 },
-  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-27', spend: 0.00 },
-  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-27', spend: 0.06 },
-  { ad_name: 'Winning Ad | Not Free', date: '2026-03-28', spend: 51.91 },
-  { ad_name: 'Winning Ad | One Year', date: '2026-03-28', spend: 0.00 },
-  { ad_name: 'Winning Ad | Enrollment Window', date: '2026-03-28', spend: 0.02 },
-  { ad_name: "Winning Ad | Don't Overpay", date: '2026-03-28', spend: 0.24 },
-  { ad_name: 'Winning Ad | Not Free', date: '2026-03-29', spend: 108.27 },
-];
-
-const seedUpsertSpend = db.prepare(`
-  INSERT INTO ad_spend (ad_name, date, spend)
-  VALUES (@ad_name, @date, @spend)
-  ON CONFLICT(ad_name, date) DO NOTHING
-`);
-for (const entry of seedSpendData) {
-  seedUpsertSpend.run(entry);
-}
-
 const getAdIdMap = db.prepare('SELECT ad_id, ad_name FROM ad_id_map');
-const getAdNameById = db.prepare('SELECT ad_name FROM ad_id_map WHERE ad_id = @ad_id');
-
-const upsertSpend = db.prepare(`
-  INSERT INTO ad_spend (ad_name, date, spend)
-  VALUES (@ad_name, @date, @spend)
-  ON CONFLICT(ad_name, date) DO UPDATE SET
-    spend = @spend,
-    created_at = CURRENT_TIMESTAMP
-`);
-
-const getSpendByRange = db.prepare(`
-  SELECT * FROM ad_spend
-  WHERE date >= @start AND date <= @end
-  ORDER BY date DESC
-`);
-
-const getSpendByAdAndRange = db.prepare(`
-  SELECT ad_name, SUM(spend) as total_spend
-  FROM ad_spend
-  WHERE date >= @start AND date <= @end
-  GROUP BY ad_name
-`);
-
-const deleteSpend = db.prepare('DELETE FROM ad_spend WHERE id = @id');
 
 const getSetting = db.prepare('SELECT value FROM settings WHERE key = @key');
 
@@ -146,42 +73,9 @@ const upsertSetting = db.prepare(`
   ON CONFLICT(key) DO UPDATE SET value = @value
 `);
 
-const insertRevenue = db.prepare(`
-  INSERT INTO ad_revenue (ad_name, date, revenue, contact_name)
-  VALUES (@ad_name, @date, @revenue, @contact_name)
-  ON CONFLICT(ad_name, date, contact_name) DO UPDATE SET
-    revenue = @revenue,
-    created_at = CURRENT_TIMESTAMP
-`);
-
-const getRevenueByRange = db.prepare(`
-  SELECT * FROM ad_revenue
-  WHERE date >= @start AND date <= @end
-  ORDER BY date DESC
-`);
-
-const getRevenueByAdAndRange = db.prepare(`
-  SELECT ad_name, SUM(revenue) as total_revenue, COUNT(*) as entry_count
-  FROM ad_revenue
-  WHERE date >= @start AND date <= @end
-  GROUP BY ad_name
-`);
-
-const deleteRevenue = db.prepare('DELETE FROM ad_revenue WHERE id = @id');
-
 module.exports = {
   db,
-  upsertSpend,
-  getSpendByRange,
-  getSpendByAdAndRange,
-  deleteSpend,
   getSetting,
   upsertSetting,
-  insertRevenue,
-  getRevenueByRange,
-  getRevenueByAdAndRange,
-  deleteRevenue,
-  upsertAdIdMap,
   getAdIdMap,
-  getAdNameById,
 };

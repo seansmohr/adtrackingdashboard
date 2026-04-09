@@ -52,38 +52,6 @@
         <div class="metric-value" id="total-appts">—</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">Autobooked</div>
-        <div class="metric-value" id="total-autobooked">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">VA Booked</div>
-        <div class="metric-value" id="total-va-booked">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Sales</div>
-        <div class="metric-value" id="total-sales">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Spend</div>
-        <div class="metric-value" id="total-spend">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Total Revenue</div>
-        <div class="metric-value" id="total-revenue">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Average CPL</div>
-        <div class="metric-value" id="avg-cpl">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Average CPA</div>
-        <div class="metric-value" id="avg-cpa">—</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-label">Overall ROAS</div>
-        <div class="metric-value" id="avg-roas">—</div>
-      </div>
-      <div class="metric-card">
         <div class="metric-label">Active Ads</div>
         <div class="metric-value" id="active-ads">—</div>
       </div>
@@ -100,104 +68,9 @@
               <th data-sort="ad_name" class="sortable">Ad Name</th>
               <th data-sort="lead_count" class="sortable sort-active sort-desc">Leads</th>
               <th data-sort="appt_count" class="sortable">Appts</th>
-              <th data-sort="autobooked_count" class="sortable">Auto</th>
-              <th data-sort="va_booked_count" class="sortable">VA</th>
-              <th data-sort="sale_count" class="sortable">Sales</th>
-              <th data-sort="total_spend" class="sortable">Spend</th>
-              <th data-sort="cpl" class="sortable">CPL</th>
-              <th data-sort="cpa" class="sortable">CPA</th>
-              <th data-sort="pct" class="sortable">% of Leads</th>
-              <th data-sort="lead_to_appt_pct" class="sortable">Lead→Appt</th>
-              <th data-sort="lead_to_sale_pct" class="sortable">Lead→Sale</th>
-              <th data-sort="total_revenue" class="sortable">Revenue</th>
-              <th data-sort="roas" class="sortable">ROAS</th>
-              <th data-sort="avg_rev_per_client" class="sortable">Avg Rev/Client</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="spend-section">
-      <h2>Enter Ad Spend</h2>
-      <div class="spend-form">
-        <div class="form-group">
-          <label for="spend-ad-name">Ad Name</label>
-          <div class="combo-input">
-            <input type="text" id="spend-ad-name" list="ad-name-list" placeholder="Select or type ad name">
-            <datalist id="ad-name-list"></datalist>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="spend-date">Date</label>
-          <input type="date" id="spend-date">
-        </div>
-        <div class="form-group">
-          <label for="spend-amount">Spend ($)</label>
-          <input type="number" id="spend-amount" step="0.01" min="0" placeholder="0.00">
-        </div>
-        <button id="btn-save-spend" class="btn btn-primary">Save Spend</button>
-      </div>
-
-      <div class="spend-entries">
-        <h3>Spend Entries for Selected Range</h3>
-        <div id="spend-entries-empty" class="empty-state hidden">No spend entries for this date range.</div>
-        <table id="spend-table" class="hidden">
-          <thead>
-            <tr>
-              <th>Ad Name</th>
-              <th>Date</th>
-              <th>Spend</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="spend-table-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="spend-section">
-      <h2>Enter Ad Revenue</h2>
-      <div class="spend-form">
-        <div class="form-group">
-          <label for="revenue-ad-name">Ad Name</label>
-          <div class="combo-input">
-            <input type="text" id="revenue-ad-name" list="ad-name-list" placeholder="Select or type ad name">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="revenue-date">Date</label>
-          <input type="date" id="revenue-date">
-        </div>
-        <div class="form-group">
-          <label for="revenue-amount">Revenue ($)</label>
-          <input type="number" id="revenue-amount" step="0.01" min="0" placeholder="0.00">
-        </div>
-        <div class="form-group">
-          <label for="revenue-contact">Contact Name</label>
-          <div class="combo-input">
-            <input type="text" id="revenue-contact" list="contact-name-list" placeholder="Select contact">
-            <datalist id="contact-name-list"></datalist>
-          </div>
-        </div>
-        <button id="btn-save-revenue" class="btn btn-primary">Save Revenue</button>
-      </div>
-
-      <div class="spend-entries">
-        <h3>Revenue Entries for Selected Range</h3>
-        <div id="revenue-entries-empty" class="empty-state hidden">No revenue entries for this date range.</div>
-        <table id="revenue-table" class="hidden">
-          <thead>
-            <tr>
-              <th>Ad Name</th>
-              <th>Date</th>
-              <th>Revenue</th>
-              <th>Contact</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="revenue-table-body"></tbody>
         </table>
       </div>
     </section>
