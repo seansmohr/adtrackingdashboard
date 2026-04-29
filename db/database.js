@@ -41,6 +41,8 @@ const knownAds = [
   'Test Ad | Cost',
   'Test Ad | Med Supp vs Adv',
   'Test Ad | Original Medicare',
+  'Winning Ad | Retire',
+  'Winning Ad | Original Medicare',
 ];
 
 const insertKnownAd = db.prepare(
@@ -61,6 +63,8 @@ const knownAdIdMap = {
   '120244840899860544': 'Test Ad | Cost',
   '120244840341920544': 'Test Ad | Med Supp vs Adv',
   '120244840241170544': 'Test Ad | Original Medicare',
+  '120245413225400544': 'Winning Ad | Retire',
+  '120245413243730544': 'Winning Ad | Original Medicare',
 };
 
 const upsertAdIdMap = db.prepare(
